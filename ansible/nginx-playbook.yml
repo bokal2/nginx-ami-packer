@@ -1,0 +1,53 @@
+---
+- name: Configure Nginx Server
+  hosts: all
+  become: yes
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Start Nginx and enable it on boot
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Create directory for static content
+      file:
+        path: /var/www/html/hello-world
+        state: directory
+        mode: 0755
+
+    - name: Create "index.html" file with "hello world" content
+      template:
+        src: "files/index.html.j2"
+        dest: /var/www/html/hello-world/index.html
+        mode: 0644
+
+    - name: Copy "index.html" to default Nginx location
+      copy:
+        src: /var/www/html/hello-world/index.html
+        dest: /var/www/html/index.html
+        mode: 0644
+        remote_src: true
+
+    - name: Enable default Nginx website
+      file:
+        src: /etc/nginx/sites-available/default
+        path: /etc/nginx/sites-enabled/default
+        state: link
+
+    - name: Restart Nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: Print Nginx installation success message
+      debug:
+        msg: "Nginx has been successfully installed and configured."
